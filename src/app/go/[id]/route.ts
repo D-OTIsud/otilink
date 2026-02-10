@@ -1,10 +1,10 @@
 import { NextRequest } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
-import { isSafeUrl, isBotUserAgent, referrerToDomain } from '@/lib/utils';
+import { isSafeUrl, isBotUserAgent } from '@/lib/utils';
 
 /**
  * Click tracking redirect: GET /go/{link_id}
- * Records the click in links_clicks then 302-redirects to the destination URL.
+ * Records a stats-only counter (monthly aggregate) then 302-redirects.
  */
 export async function GET(
   request: NextRequest,
@@ -33,21 +33,12 @@ export async function GET(
     return new Response('URL non valide', { status: 400 });
   }
 
-  // Record the click (privacy-friendly + bot filtering)
-  const referrer = request.headers.get('referer');
   const userAgent = request.headers.get('user-agent');
-  const referrerDomain = referrerToDomain(referrer);
   const isBot = isBotUserAgent(userAgent);
 
   try {
-    // Keep payload minimal; store domain + bot flag (not full referrer URL).
-    await supabase.from('links_clicks').insert({
-      link_id: link.id,
-      referrer_domain: referrerDomain,
-      referrer: null,
-      user_agent: null,
-      is_bot: isBot,
-    });
+    // Stats-only tracking: increment monthly counter. No visitor identity is stored.
+    await supabase.rpc('increment_click_monthly', { link_id: link.id, is_bot: isBot });
   } catch {
     // Best effort: never block redirects on tracking failures.
   }

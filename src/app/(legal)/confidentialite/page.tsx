@@ -24,10 +24,11 @@ export default function Confidentialite() {
         <li><strong>Données de profil</strong> : nom affiché, bio, slug, URL d&apos;avatar que vous
           renseignez.</li>
         <li><strong>Données de liens</strong> : les liens que vous créez (label, URL, icône).</li>
-        <li><strong>Données de statistiques</strong> : lors d&apos;un clic sur un lien de votre page
-          publique, nous enregistrons la date du clic, le <strong>domaine</strong> du site référent
-          (si disponible) et un indicateur technique permettant d&apos;exclure les robots (bots) des
-          statistiques. Nous ne stockons pas l&apos;URL complète du référent.</li>
+        <li><strong>Données de statistiques</strong> : lors d&apos;un clic sur un lien public, nous
+          enregistrons uniquement des <strong>compteurs statistiques agrégés</strong> (par mois et
+          par lien), ainsi qu&apos;un indicateur technique permettant d&apos;exclure les robots (bots) des
+          statistiques. <strong>Aucun compte visiteur n&apos;est créé</strong> et nous ne collectons pas
+          l&apos;identité des visiteurs.</li>
       </ul>
 
       <h2>Base légale et finalités</h2>
@@ -43,8 +44,9 @@ export default function Confidentialite() {
         suppression de votre compte et de toutes vos données à tout moment.
       </p>
       <p>
-        Les statistiques de clics sont conservées pendant une durée limitée nécessaire à l&apos;analyse
-        de l&apos;activité (par exemple 90 jours), puis supprimées ou agrégées.
+        Les statistiques de clics sont conservées sous forme <strong>agrégée</strong> (mensuelle) afin
+        de permettre un suivi de tendance. Aucune donnée de clic « évènement par évènement » n&apos;est
+        conservée pour les visiteurs.
       </p>
 
       <h2>Cookies</h2>

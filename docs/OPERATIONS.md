@@ -111,3 +111,11 @@ Recommended webhooks:
 
 You can monitor webhook calls in the `net` schema (pg_net logs).
 
+## Branding assets (dashboard logo)
+
+The dashboard header can display a logo at:
+
+- `/brand/otisud-logo.png`
+
+Add your PNG file to the repo at `public/brand/otisud-logo.png` and redeploy.
+

@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 export function DashboardShell({
   currentPublicPath,
   children,
@@ -7,6 +9,7 @@ export function DashboardShell({
   currentPublicPath: string;
   children: React.ReactNode;
 }) {
+  const [logoOk, setLogoOk] = useState(true);
   const baseUrl =
     typeof window !== 'undefined'
       ? window.location.origin
@@ -16,7 +19,18 @@ export function DashboardShell({
     <div className="min-h-screen bg-zinc-50">
       <header className="border-b border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
-          <span className="font-semibold text-zinc-900">OTISUD Links</span>
+          <div className="flex items-center gap-3">
+            {logoOk ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src="/brand/otisud-logo.png"
+                alt="OTISUD"
+                className="h-8 w-auto"
+                onError={() => setLogoOk(false)}
+              />
+            ) : null}
+            <span className="font-semibold text-zinc-900">OTISUD Links</span>
+          </div>
           <div className="flex items-center gap-3">
             <a
               href={`${baseUrl}${currentPublicPath}`}

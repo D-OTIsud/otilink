@@ -102,8 +102,10 @@ CREATE INDEX IF NOT EXISTS idx_links_clicks_link_id ON public.links_clicks (link
 
 -- Monthly aggregation (per link, per month) for long-term reporting
 CREATE TABLE IF NOT EXISTS public.links_clicks_monthly (
-  -- Owner of the page (auth user). Kept for RLS + reporting.
-  profile_user_id uuid NOT NULL,
+  -- Page owning the link (supports homepage pages too)
+  page_id uuid NOT NULL REFERENCES public.links_pages (id) ON DELETE CASCADE,
+  -- Legacy owner column (kept for backward compatibility; not required for stats-only mode)
+  profile_user_id uuid,
   link_id uuid NOT NULL REFERENCES public.links_links (id) ON DELETE CASCADE,
   month date NOT NULL, -- first day of month (YYYY-MM-01)
   clicks_human bigint NOT NULL DEFAULT 0,
@@ -112,15 +114,65 @@ CREATE TABLE IF NOT EXISTS public.links_clicks_monthly (
   icon text,
   type text,
   updated_at timestamptz DEFAULT now(),
-  PRIMARY KEY (profile_user_id, link_id, month)
+  PRIMARY KEY (page_id, link_id, month)
 );
 
-CREATE INDEX IF NOT EXISTS idx_links_clicks_monthly_profile_month
-  ON public.links_clicks_monthly (profile_user_id, month);
+CREATE INDEX IF NOT EXISTS idx_links_clicks_monthly_page_month
+  ON public.links_clicks_monthly (page_id, month);
 
 -- Remove legacy FK to links_profiles (pages model no longer depends on it).
 ALTER TABLE public.links_clicks_monthly
   DROP CONSTRAINT IF EXISTS links_clicks_monthly_profile_user_id_fkey;
+
+-- Evolve monthly table to use page_id as the primary dimension (stats-only mode).
+ALTER TABLE public.links_clicks_monthly
+  ADD COLUMN IF NOT EXISTS page_id uuid;
+
+-- Backfill page_id for existing monthly rows (if any)
+UPDATE public.links_clicks_monthly m
+SET page_id = l.page_id
+FROM public.links_links l
+WHERE m.page_id IS NULL
+  AND l.id = m.link_id;
+
+-- Enforce not-null once backfilled
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'links_clicks_monthly'
+      AND column_name = 'page_id'
+  ) THEN
+    -- If any rows still have NULL page_id, leave it nullable to avoid breaking migrations.
+    IF NOT EXISTS (SELECT 1 FROM public.links_clicks_monthly WHERE page_id IS NULL) THEN
+      ALTER TABLE public.links_clicks_monthly ALTER COLUMN page_id SET NOT NULL;
+    END IF;
+  END IF;
+END $$;
+
+-- Replace PK with (page_id, link_id, month) when possible
+DO $$
+BEGIN
+  -- Drop default PK name if it exists
+  ALTER TABLE public.links_clicks_monthly DROP CONSTRAINT IF EXISTS links_clicks_monthly_pkey;
+  -- Create new PK if it doesn't exist yet
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'links_clicks_monthly_page_link_month_pkey'
+  ) THEN
+    -- Only add if all page_id are non-null
+    IF NOT EXISTS (SELECT 1 FROM public.links_clicks_monthly WHERE page_id IS NULL) THEN
+      ALTER TABLE public.links_clicks_monthly
+        ADD CONSTRAINT links_clicks_monthly_page_link_month_pkey PRIMARY KEY (page_id, link_id, month);
+    END IF;
+  END IF;
+END $$;
+
+DROP INDEX IF EXISTS idx_links_clicks_monthly_profile_month;
+CREATE INDEX IF NOT EXISTS idx_links_clicks_monthly_page_month
+  ON public.links_clicks_monthly (page_id, month);
 
 -- ---------------------------------------------------------------------------
 -- Migration path to pages: add page_id and relax legacy FK
@@ -422,7 +474,21 @@ CREATE POLICY clicks_select_own ON public.links_clicks
 -- links_clicks_monthly: users can read their own monthly stats
 DROP POLICY IF EXISTS clicks_monthly_select_own ON public.links_clicks_monthly;
 CREATE POLICY clicks_monthly_select_own ON public.links_clicks_monthly
-  FOR SELECT USING (auth.uid() = profile_user_id AND public.is_otilink_staff());
+  FOR SELECT USING (
+    public.is_otilink_staff()
+    AND EXISTS (
+      SELECT 1
+      FROM public.links_pages p
+      WHERE p.id = links_clicks_monthly.page_id
+        AND (
+          p.owner_user_id = auth.uid()
+          OR (
+            p.is_homepage = true
+            AND EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+          )
+        )
+    )
+  );
 
 -- links_clicks: no insert via RLS (clicks are recorded server-side with service role)
 
@@ -433,11 +499,11 @@ LANGUAGE sql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT c.link_id, count(*)::bigint
-  FROM links_clicks c
-  JOIN links_links l ON l.id = c.link_id
-  JOIN links_pages p ON p.id = l.page_id
-  WHERE c.link_id = ANY(link_ids)
+  SELECT m.link_id, sum(m.clicks_human)::bigint AS clicks
+  FROM public.links_clicks_monthly m
+  JOIN public.links_pages p ON p.id = m.page_id
+  WHERE m.link_id = ANY(link_ids)
+    AND public.is_otilink_staff()
     AND (
       p.owner_user_id = auth.uid()
       OR (
@@ -445,9 +511,7 @@ AS $$
         AND EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
       )
     )
-    AND public.is_otilink_staff()
-    AND c.is_bot = false
-  GROUP BY c.link_id;
+  GROUP BY m.link_id;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.get_click_counts(uuid[]) TO authenticated;
@@ -469,6 +533,7 @@ BEGIN
   start_month := (date_trunc('month', now())::date - ((months_back - 1) * interval '1 month'))::date;
 
   INSERT INTO public.links_clicks_monthly (
+    page_id,
     profile_user_id,
     link_id,
     month,
@@ -479,6 +544,7 @@ BEGIN
     updated_at
   )
   SELECT
+    l.page_id,
     p.owner_user_id,
     c.link_id,
     date_trunc('month', c.clicked_at)::date AS month,
@@ -491,9 +557,8 @@ BEGIN
   JOIN public.links_links l ON l.id = c.link_id
   JOIN public.links_pages p ON p.id = l.page_id
   WHERE c.clicked_at >= start_month
-    AND p.owner_user_id IS NOT NULL
-  GROUP BY 1,2,3,6,7
-  ON CONFLICT (profile_user_id, link_id, month)
+  GROUP BY 1,2,3,4,7,8
+  ON CONFLICT (page_id, link_id, month)
   DO UPDATE SET
     clicks_human = EXCLUDED.clicks_human,
     clicks_bot = EXCLUDED.clicks_bot,
@@ -532,14 +597,84 @@ AS $$
     sum(m.clicks_human)::bigint AS clicks_human,
     sum(m.clicks_bot)::bigint AS clicks_bot
   FROM public.links_clicks_monthly m
-  WHERE m.profile_user_id = auth.uid()
-    AND public.is_otilink_staff()
+  JOIN public.links_pages p ON p.id = m.page_id
+  WHERE public.is_otilink_staff()
+    AND (
+      p.owner_user_id = auth.uid()
+      OR (
+        p.is_homepage = true
+        AND EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+      )
+    )
     AND m.month >= (date_trunc('month', now())::date - ((months - 1) * interval '1 month'))::date
   GROUP BY 1,2,3
   ORDER BY m.month DESC, m.icon NULLS LAST;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.get_monthly_clicks(int) TO authenticated;
+
+-- RPC: increment monthly click counters (stats-only tracking)
+-- This avoids storing per-visit click events and keeps only aggregated counts.
+CREATE OR REPLACE FUNCTION public.increment_click_monthly(
+  link_id uuid,
+  is_bot boolean DEFAULT false
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_page_id uuid;
+  v_month date;
+  v_icon text;
+  v_type text;
+BEGIN
+  v_month := date_trunc('month', now())::date;
+
+  SELECT l.page_id, l.icon, l.type
+  INTO v_page_id, v_icon, v_type
+  FROM public.links_links l
+  WHERE l.id = link_id;
+
+  IF v_page_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  INSERT INTO public.links_clicks_monthly (
+    page_id,
+    profile_user_id,
+    link_id,
+    month,
+    clicks_human,
+    clicks_bot,
+    icon,
+    type,
+    updated_at
+  )
+  SELECT
+    v_page_id,
+    p.owner_user_id,
+    link_id,
+    v_month,
+    CASE WHEN is_bot THEN 0 ELSE 1 END,
+    CASE WHEN is_bot THEN 1 ELSE 0 END,
+    v_icon,
+    v_type,
+    now()
+  FROM public.links_pages p
+  WHERE p.id = v_page_id
+  ON CONFLICT (page_id, link_id, month)
+  DO UPDATE SET
+    clicks_human = public.links_clicks_monthly.clicks_human + EXCLUDED.clicks_human,
+    clicks_bot = public.links_clicks_monthly.clicks_bot + EXCLUDED.clicks_bot,
+    icon = EXCLUDED.icon,
+    type = EXCLUDED.type,
+    updated_at = now();
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.increment_click_monthly(uuid, boolean) TO service_role;
 
 -- ---------------------------------------------------------------------------
 -- Seed: default template (OTISUD teal branding)

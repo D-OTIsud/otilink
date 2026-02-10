@@ -90,3 +90,7 @@ This repo includes a production [`Dockerfile`](Dockerfile). Set env vars in Cool
 ## Operations guide
 
 See [`docs/OPERATIONS.md`](docs/OPERATIONS.md).
+
+## Branding (dashboard logo)
+
+Add your logo file at `public/brand/otisud-logo.png` to display it in the dashboard header.
