@@ -41,7 +41,9 @@ export async function POST(request: NextRequest) {
   }
 
   for (const tag of tags) {
-    revalidateTag(tag);
+    // Next.js 16 requires a revalidation profile/expire option (2nd argument).
+    // For webhook-style invalidation we want immediate expiration.
+    revalidateTag(tag, { expire: 0 });
   }
 
   return NextResponse.json({ ok: true, revalidated: tags });

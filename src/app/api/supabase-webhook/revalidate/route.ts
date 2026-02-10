@@ -34,7 +34,7 @@ async function userIdToSlug(userId: string): Promise<string | null> {
 function revalidateSlug(slug: string) {
   const normalized = slug.trim().toLowerCase();
   if (!normalized || isReservedSlug(normalized)) return;
-  revalidateTag(`slug:${normalized}`);
+  revalidateTag(`slug:${normalized}`, { expire: 0 });
 }
 
 /**
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
   // Template changes: purge global template tag
   if (table === 'links_templates') {
-    revalidateTag('template:otisud-default');
+    revalidateTag('template:otisud-default', { expire: 0 });
     revalidated.push('template:otisud-default');
     return NextResponse.json({ ok: true, revalidated });
   }
