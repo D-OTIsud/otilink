@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { createServiceClient } from '@/lib/supabase/service';
-import { isReservedSlug } from '@/lib/utils';
 
 type WebhookPayload = {
   type: 'INSERT' | 'UPDATE' | 'DELETE';
@@ -20,21 +19,25 @@ function assertAuthorized(request: NextRequest): NextResponse | null {
   return null;
 }
 
-async function userIdToSlug(userId: string): Promise<string | null> {
+async function pageIdToSlugAndHomepage(pageId: string): Promise<{ slug: string; is_homepage: boolean } | null> {
   const supabase = createServiceClient();
   const { data, error } = await supabase
-    .from('links_profiles')
-    .select('slug')
-    .eq('user_id', userId)
+    .from('links_pages')
+    .select('slug, is_homepage')
+    .eq('id', pageId)
     .single();
   if (error || !data?.slug) return null;
-  return String(data.slug).toLowerCase();
+  return { slug: String(data.slug).toLowerCase(), is_homepage: Boolean(data.is_homepage) };
 }
 
-function revalidateSlug(slug: string) {
+function revalidatePage(slug: string) {
   const normalized = slug.trim().toLowerCase();
-  if (!normalized || isReservedSlug(normalized)) return;
-  revalidateTag(`slug:${normalized}`, { expire: 0 });
+  if (!normalized) return;
+  revalidateTag(`page:${normalized}`, { expire: 0 });
+}
+
+function revalidateHomepage() {
+  revalidateTag('homepage', { expire: 0 });
 }
 
 /**
@@ -42,7 +45,7 @@ function revalidateSlug(slug: string) {
  *
  * Configure Supabase Integrations -> Database Webhooks to POST here on:
  * - public.links_links (INSERT, UPDATE, DELETE)
- * - public.links_profiles (UPDATE)  (slug changes)
+ * - public.links_pages (INSERT, UPDATE, DELETE)
  * - public.links_templates (UPDATE) (template changes)
  *
  * Must include header: x-revalidate-secret: <REVALIDATE_SECRET>
@@ -64,44 +67,61 @@ export async function POST(request: NextRequest) {
 
   const revalidated: string[] = [];
 
-  // Template changes: purge global template tag
+  // Template changes: purge template tag
   if (table === 'links_templates') {
-    revalidateTag('template:otisud-default', { expire: 0 });
-    revalidated.push('template:otisud-default');
-    return NextResponse.json({ ok: true, revalidated });
-  }
-
-  // Profile slug changes: purge old+new slug
-  if (table === 'links_profiles') {
     const newSlug = record?.slug ? String(record.slug) : null;
     const oldSlug = oldRecord?.slug ? String(oldRecord.slug) : null;
-
     if (oldSlug) {
-      revalidateSlug(oldSlug);
-      revalidated.push(`slug:${oldSlug.toLowerCase()}`);
+      revalidateTag(`template:${oldSlug}`, { expire: 0 });
+      revalidated.push(`template:${oldSlug}`);
     }
     if (newSlug && newSlug !== oldSlug) {
-      revalidateSlug(newSlug);
-      revalidated.push(`slug:${newSlug.toLowerCase()}`);
+      revalidateTag(`template:${newSlug}`, { expire: 0 });
+      revalidated.push(`template:${newSlug}`);
+    }
+    return NextResponse.json({ ok: true, revalidated });
+  }
+
+  // Page changes: purge old+new page tag (+ homepage tag when applicable)
+  if (table === 'links_pages') {
+    const newSlug = record?.slug ? String(record.slug) : null;
+    const oldSlug = oldRecord?.slug ? String(oldRecord.slug) : null;
+    const newIsHomepage = Boolean(record?.is_homepage);
+    const oldIsHomepage = Boolean(oldRecord?.is_homepage);
+
+    if (oldSlug) {
+      revalidatePage(oldSlug);
+      revalidated.push(`page:${oldSlug.toLowerCase()}`);
+    }
+    if (newSlug && newSlug !== oldSlug) {
+      revalidatePage(newSlug);
+      revalidated.push(`page:${newSlug.toLowerCase()}`);
+    }
+
+    if (newIsHomepage || oldIsHomepage) {
+      revalidateHomepage();
+      revalidated.push('homepage');
     }
 
     return NextResponse.json({ ok: true, revalidated });
   }
 
-  // Link changes: purge the owning profile's slug
+  // Link changes: purge the owning page
   if (table === 'links_links') {
-    const profileUserId =
-      (record?.profile_user_id as string | undefined) ??
-      (oldRecord?.profile_user_id as string | undefined);
+    const pageId = (record?.page_id as string | undefined) ?? (oldRecord?.page_id as string | undefined);
 
-    if (!profileUserId) {
+    if (!pageId) {
       return NextResponse.json({ ok: true, revalidated: [] });
     }
 
-    const slug = await userIdToSlug(profileUserId);
-    if (slug) {
-      revalidateSlug(slug);
-      revalidated.push(`slug:${slug}`);
+    const page = await pageIdToSlugAndHomepage(pageId);
+    if (page?.slug) {
+      revalidatePage(page.slug);
+      revalidated.push(`page:${page.slug}`);
+      if (page.is_homepage) {
+        revalidateHomepage();
+        revalidated.push('homepage');
+      }
     }
 
     return NextResponse.json({ ok: true, revalidated });

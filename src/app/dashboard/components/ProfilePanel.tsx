@@ -2,14 +2,21 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import type { LinksProfile } from '@/lib/types';
-import { slugFromString, isReservedSlug, FIELD_LIMITS } from '@/lib/utils';
+import type { LinksPage, LinksTemplate } from '@/lib/types';
+import { slugFromString, isReservedSlug, FIELD_LIMITS, isSafeUrl } from '@/lib/utils';
 
-export function ProfilePanel({ profile }: { profile: LinksProfile }) {
-  const [displayName, setDisplayName] = useState(profile.display_name ?? '');
-  const [bio, setBio] = useState(profile.bio ?? '');
-  const [slug, setSlug] = useState(profile.slug);
-  const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url ?? '');
+export function ProfilePanel({
+  page,
+  templates,
+}: {
+  page: LinksPage;
+  templates: Pick<LinksTemplate, 'slug' | 'name'>[];
+}) {
+  const [displayName, setDisplayName] = useState(page.display_name ?? '');
+  const [bio, setBio] = useState(page.bio ?? '');
+  const [slug, setSlug] = useState(page.slug);
+  const [avatarUrl, setAvatarUrl] = useState(page.avatar_url ?? '');
+  const [templateSlug, setTemplateSlug] = useState(page.template_slug ?? 'otisud-default');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null);
 
@@ -18,7 +25,7 @@ export function ProfilePanel({ profile }: { profile: LinksProfile }) {
     setSaving(true);
     setMessage(null);
 
-    const trimmedSlug = slug.trim() || profile.slug;
+    const trimmedSlug = slug.trim() || page.slug;
 
     // Client-side validation
     if (trimmedSlug.length < FIELD_LIMITS.slug_min || trimmedSlug.length > FIELD_LIMITS.slug_max) {
@@ -44,14 +51,15 @@ export function ProfilePanel({ profile }: { profile: LinksProfile }) {
 
     const supabase = createClient();
     const { error } = await supabase
-      .from('links_profiles')
+      .from('links_pages')
       .update({
         display_name: displayName || null,
         bio: bio || null,
         slug: trimmedSlug,
         avatar_url: avatarUrl.trim() || null,
+        template_slug: templateSlug,
       })
-      .eq('user_id', profile.user_id);
+      .eq('id', page.id);
 
     setSaving(false);
     if (error) {
@@ -64,12 +72,43 @@ export function ProfilePanel({ profile }: { profile: LinksProfile }) {
       }
       return;
     }
-    setMessage({ type: 'ok', text: 'Profil enregistré.' });
+    setMessage({ type: 'ok', text: 'Page enregistrée.' });
   }
+
+  const safeAvatar = isSafeUrl(avatarUrl) ? avatarUrl : '';
+  const initials = (displayName || slug || 'OT')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase())
+    .join('');
 
   return (
     <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-4 text-lg font-semibold text-zinc-900">Profil</h2>
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold text-zinc-900">
+            {page.is_homepage ? 'Page d’accueil (organisation)' : 'Page'}
+          </h2>
+          <p className="text-sm text-zinc-500">
+            {page.is_homepage ? 'Affichée sur /' : `Affichée sur /${slug || '…'}`}
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {safeAvatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={safeAvatar}
+              alt=""
+              className="h-12 w-12 rounded-full border border-zinc-200 object-cover"
+            />
+          ) : (
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-sm font-semibold text-zinc-600">
+              {initials || 'OT'}
+            </div>
+          )}
+        </div>
+      </div>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="display_name" className="mb-1 block text-sm font-medium text-zinc-700">
@@ -108,14 +147,35 @@ export function ProfilePanel({ profile }: { profile: LinksProfile }) {
             value={slug}
             onChange={(e) => setSlug(slugFromString(e.target.value) || e.target.value)}
             maxLength={FIELD_LIMITS.slug_max}
+            disabled={page.is_homepage}
             className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm text-zinc-900 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
           />
           <p className="mt-1 text-xs text-zinc-500">
-            Votre page sera à : /{slug || '…'}
+            {page.is_homepage ? 'Cette page est accessible sur /' : `Votre page sera à : /${slug || '…'}`}
           </p>
           {isReservedSlug(slug) && (
             <p className="mt-1 text-xs text-red-500">Ce slug est réservé.</p>
           )}
+        </div>
+        <div>
+          <label htmlFor="template_slug" className="mb-1 block text-sm font-medium text-zinc-700">
+            Modèle (template)
+          </label>
+          <select
+            id="template_slug"
+            value={templateSlug}
+            onChange={(e) => setTemplateSlug(e.target.value)}
+            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+          >
+            {templates.map((t) => (
+              <option key={t.slug} value={t.slug}>
+                {t.name} ({t.slug})
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-zinc-500">
+            Vous pouvez sélectionner un modèle. Seuls les admins peuvent modifier la liste des modèles.
+          </p>
         </div>
         <div>
           <label htmlFor="avatar_url" className="mb-1 block text-sm font-medium text-zinc-700">
@@ -147,7 +207,7 @@ export function ProfilePanel({ profile }: { profile: LinksProfile }) {
           disabled={saving}
           className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
         >
-          {saving ? 'Enregistrement…' : 'Enregistrer le profil'}
+          {saving ? 'Enregistrement…' : 'Enregistrer la page'}
         </button>
       </form>
     </section>

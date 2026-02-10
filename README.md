@@ -4,9 +4,10 @@ Self-hosted “Linktree-style” app for OTISUD.
 
 ## Features
 - Google login via Supabase Auth
-- Per-user profile at `/{slug}`
-- Links dashboard with drag-and-drop ordering
-- Global HTML template stored in DB (admin-only)
+- Organization homepage at `/` (editable by homepage editors)
+- Multiple public pages (Linktree-style) at `/{pageSlug}` (a user can have many)
+- Dashboard with page picker + drag-and-drop ordering
+- HTML templates stored in DB (admins edit; users only select)
 - Click tracking via `/go/{link_id}` + bot filtering
 - Monthly click aggregation + 1-year raw click retention
 - Public page caching (1 day) + Supabase Database Webhook invalidation
@@ -33,20 +34,30 @@ Server-only:
 
 OTILink is restricted to staff listed in `public.appbadge_utilisateurs` (`email`, `actif`).
 
-3) Grant template admin access (run in Supabase SQL Editor):
+3) Grant homepage editor access (who can edit `/`):
+
+```sql
+insert into public.links_homepage_editors (user_id)
+select id from auth.users
+where lower(email) = lower('<editor-email>')
+on conflict (user_id) do nothing;
+```
+
+4) Grant template admin access (run in Supabase SQL Editor):
 
 ```sql
 insert into public.links_admins (user_id) values ('<user-uuid>');
 ```
 
-4) Enable Google OAuth in Supabase Auth and set redirect URL:
+5) Enable Google OAuth in Supabase Auth and set redirect URL:
 - `https://<your-domain>/auth/callback`
 
 ## Cache invalidation (recommended)
 
 Public pages are cached and tagged:
-- `slug:{slug}`
-- `template:otisud-default`
+- `page:{pageSlug}`
+- `template:{templateSlug}`
+- `homepage`
 
 Configure Supabase **Database Webhooks** to call:
 - `POST https://<your-domain>/api/supabase-webhook/revalidate`
@@ -54,7 +65,7 @@ Configure Supabase **Database Webhooks** to call:
 
 Recommended tables/events:
 - `public.links_links`: INSERT/UPDATE/DELETE
-- `public.links_profiles`: UPDATE
+- `public.links_pages`: INSERT/UPDATE/DELETE
 - `public.links_templates`: UPDATE
 
 ## Click tracking ops

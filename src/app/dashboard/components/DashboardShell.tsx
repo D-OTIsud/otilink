@@ -1,10 +1,10 @@
 'use client';
 
 export function DashboardShell({
-  profileSlug,
+  currentPublicPath,
   children,
 }: {
-  profileSlug: string;
+  currentPublicPath: string;
   children: React.ReactNode;
 }) {
   const baseUrl =
@@ -19,12 +19,12 @@ export function DashboardShell({
           <span className="font-semibold text-zinc-900">OTISUD Links</span>
           <div className="flex items-center gap-3">
             <a
-              href={`${baseUrl}/${profileSlug}`}
+              href={`${baseUrl}${currentPublicPath}`}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
             >
-              Voir ma page publique
+              Voir la page publique
             </a>
             <form action="/logout" method="post">
               <button

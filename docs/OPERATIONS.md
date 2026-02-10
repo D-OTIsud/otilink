@@ -35,6 +35,27 @@ The migration adds a helper function `public.is_otilink_staff()` (SECURITY DEFIN
 
 If your staff table name/columns differ, update the function in `supabase/migration.sql` accordingly.
 
+## Pages model + organization homepage (/)
+
+OTILink uses a **pages** model:
+
+- Public pages: `/{pageSlug}` are rows in `public.links_pages`
+- Each page has its own links in `public.links_links` (via `page_id`)
+- The organization homepage is the single row in `public.links_pages` where `is_homepage = true`, rendered at `/`
+
+## Homepage editors (who can edit /)
+
+Homepage editing is controlled via an allowlist table: `public.links_homepage_editors`.
+
+To grant homepage editor access:
+
+```sql
+insert into public.links_homepage_editors (user_id)
+select id from auth.users
+where lower(email) = lower('<editor-email>')
+on conflict (user_id) do nothing;
+```
+
 ## Admin access (template editor)
 
 Template read/update is restricted to an allowlist table `public.links_admins`.
@@ -44,6 +65,8 @@ Grant admin to a user (run in Supabase SQL Editor):
 ```sql
 insert into public.links_admins (user_id) values ('<user-uuid>');
 ```
+
+Admins can edit template HTML. Staff users can **only select** templates for their pages.
 
 ## Click tracking: rollup + retention (pg_cron)
 
@@ -70,8 +93,9 @@ This keeps raw click rows for 1 year and maintains monthly aggregates (last ~14 
 ## Public page caching + cache invalidation
 
 Public pages (`/{slug}`) are cached server-side for up to 1 day and tagged:
-- `slug:{slug}`
-- `template:otisud-default`
+- `page:{pageSlug}`
+- `template:{templateSlug}`
+- `homepage` (for `/`)
 
 To purge cache on DB changes, configure Supabase **Database Webhooks** to call:
 
@@ -81,9 +105,9 @@ Headers:
 - `x-revalidate-secret: <REVALIDATE_SECRET>`
 
 Recommended webhooks:
-- `public.links_links`: `INSERT`, `UPDATE`, `DELETE` (purges the owning slug)
-- `public.links_profiles`: `UPDATE` (purges old/new slug when slug changes)
-- `public.links_templates`: `UPDATE` (purges template tag)
+- `public.links_links`: `INSERT`, `UPDATE`, `DELETE` (purges the owning page)
+- `public.links_pages`: `INSERT`, `UPDATE`, `DELETE` (purges old/new page slug; purges `homepage` if homepage changes)
+- `public.links_templates`: `UPDATE` (purges the template tag)
 
 You can monitor webhook calls in the `net` schema (pg_net logs).
 

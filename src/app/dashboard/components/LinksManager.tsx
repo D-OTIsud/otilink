@@ -16,15 +16,15 @@ import type { Link } from '@/lib/types';
 import { LinkRow } from './LinkRow';
 
 /**
- * profileUserId is needed for INSERT (DB requires it). RLS validates it matches auth.uid().
+ * pageId is needed for INSERT. RLS validates user can edit the page.
  * clickCounts: map of link_id -> number of clicks (loaded server-side).
  */
 export function LinksManager({
-  profileUserId,
+  pageId,
   initialLinks,
   clickCounts,
 }: {
-  profileUserId: string;
+  pageId: string;
   initialLinks: Link[];
   clickCounts: Record<string, number>;
 }) {
@@ -73,7 +73,7 @@ export function LinksManager({
     const { data, error } = await supabase
       .from('links_links')
       .insert({
-        profile_user_id: profileUserId,
+        page_id: pageId,
         label: 'Nouveau lien',
         url: 'https://',
         sort_order: maxOrder,
@@ -81,7 +81,7 @@ export function LinksManager({
       .select()
       .single();
     if (!error && data) setLinks((prev) => [...prev, data as Link]);
-  }, [links, profileUserId, supabase]);
+  }, [links, pageId, supabase]);
 
   const deleteLink = useCallback(
     async (id: string) => {

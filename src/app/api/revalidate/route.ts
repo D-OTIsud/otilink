@@ -7,7 +7,11 @@ import { isReservedSlug } from '@/lib/utils';
  *
  * POST /api/revalidate
  * Headers: x-revalidate-secret: <REVALIDATE_SECRET>
- * Body (json): { slug?: string, template?: boolean }
+ * Body (json): { page?: string, homepage?: boolean, template_slug?: string }
+ *
+ * Backward-compatible aliases:
+ * - slug -> page
+ * - template=true -> template:otisud-default
  */
 export async function POST(request: NextRequest) {
   const secret = request.headers.get('x-revalidate-secret');
@@ -25,15 +29,21 @@ export async function POST(request: NextRequest) {
 
   const tags: string[] = [];
 
-  if (body?.template) {
-    tags.push('template:otisud-default');
+  if (body?.homepage) {
+    tags.push('homepage');
   }
 
-  if (typeof body?.slug === 'string' && body.slug.trim()) {
-    const slug = body.slug.trim().toLowerCase();
-    if (!isReservedSlug(slug)) {
-      tags.push(`slug:${slug}`);
-    }
+  const templateSlug =
+    (typeof body?.template_slug === 'string' ? body.template_slug : null) ??
+    (body?.template ? 'otisud-default' : null);
+  if (templateSlug) {
+    tags.push(`template:${String(templateSlug).trim()}`);
+  }
+
+  const pageSlug = (typeof body?.page === 'string' ? body.page : null) ?? (typeof body?.slug === 'string' ? body.slug : null);
+  if (pageSlug && String(pageSlug).trim()) {
+    const slug = String(pageSlug).trim().toLowerCase();
+    if (!isReservedSlug(slug)) tags.push(`page:${slug}`);
   }
 
   if (tags.length === 0) {
