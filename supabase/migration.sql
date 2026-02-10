@@ -86,6 +86,31 @@ CREATE INDEX IF NOT EXISTS idx_links_clicks_monthly_profile_month
   ON public.links_clicks_monthly (profile_user_id, month);
 
 -- ---------------------------------------------------------------------------
+-- Staff allowlist helper (restrict OTILink to staff only)
+-- ---------------------------------------------------------------------------
+-- OTILink is intended for staff-only usage. We reuse your existing staff table:
+--   public.appbadge_utilisateurs(email text, actif boolean, nom text, prenom text, avatar text, ...)
+--
+-- This SECURITY DEFINER function lets RLS policies check staff membership
+-- without granting table access to authenticated users.
+CREATE OR REPLACE FUNCTION public.is_otilink_staff()
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.appbadge_utilisateurs u
+    WHERE lower(u.email) = lower(coalesce(auth.jwt() ->> 'email', ''))
+      AND u.actif = true
+  );
+$$;
+
+GRANT EXECUTE ON FUNCTION public.is_otilink_staff() TO authenticated;
+
+-- ---------------------------------------------------------------------------
 -- RLS
 -- ---------------------------------------------------------------------------
 
@@ -97,52 +122,72 @@ ALTER TABLE public.links_clicks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.links_clicks_monthly ENABLE ROW LEVEL SECURITY;
 
 -- links_profiles: users manage only their own row
+DROP POLICY IF EXISTS profiles_select_own ON public.links_profiles;
 CREATE POLICY profiles_select_own ON public.links_profiles
-  FOR SELECT USING (auth.uid() = user_id);
+  FOR SELECT USING (auth.uid() = user_id AND public.is_otilink_staff());
 
+DROP POLICY IF EXISTS profiles_insert_own ON public.links_profiles;
 CREATE POLICY profiles_insert_own ON public.links_profiles
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+  FOR INSERT WITH CHECK (auth.uid() = user_id AND public.is_otilink_staff());
 
+DROP POLICY IF EXISTS profiles_update_own ON public.links_profiles;
 CREATE POLICY profiles_update_own ON public.links_profiles
-  FOR UPDATE USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+  FOR UPDATE
+  USING (auth.uid() = user_id AND public.is_otilink_staff())
+  WITH CHECK (auth.uid() = user_id AND public.is_otilink_staff());
 
 -- links_admins: users can only see their own row (to know if they are admin). No INSERT/UPDATE/DELETE for authenticated.
+DROP POLICY IF EXISTS admins_select_own ON public.links_admins;
 CREATE POLICY admins_select_own ON public.links_admins
-  FOR SELECT USING (auth.uid() = user_id);
+  FOR SELECT USING (auth.uid() = user_id AND public.is_otilink_staff());
 
 -- links_links: users manage only their own links
+DROP POLICY IF EXISTS links_select_own ON public.links_links;
 CREATE POLICY links_select_own ON public.links_links
-  FOR SELECT USING (auth.uid() = profile_user_id);
+  FOR SELECT USING (auth.uid() = profile_user_id AND public.is_otilink_staff());
 
+DROP POLICY IF EXISTS links_insert_own ON public.links_links;
 CREATE POLICY links_insert_own ON public.links_links
-  FOR INSERT WITH CHECK (auth.uid() = profile_user_id);
+  FOR INSERT WITH CHECK (auth.uid() = profile_user_id AND public.is_otilink_staff());
 
+DROP POLICY IF EXISTS links_update_own ON public.links_links;
 CREATE POLICY links_update_own ON public.links_links
-  FOR UPDATE USING (auth.uid() = profile_user_id) WITH CHECK (auth.uid() = profile_user_id);
+  FOR UPDATE
+  USING (auth.uid() = profile_user_id AND public.is_otilink_staff())
+  WITH CHECK (auth.uid() = profile_user_id AND public.is_otilink_staff());
 
+DROP POLICY IF EXISTS links_delete_own ON public.links_links;
 CREATE POLICY links_delete_own ON public.links_links
-  FOR DELETE USING (auth.uid() = profile_user_id);
+  FOR DELETE USING (auth.uid() = profile_user_id AND public.is_otilink_staff());
 
 -- links_templates: ONLY users in links_admins can read (template is global/admin-managed)
+DROP POLICY IF EXISTS templates_select_admin_only ON public.links_templates;
 CREATE POLICY templates_select_admin_only ON public.links_templates
   FOR SELECT TO authenticated
   USING (
-    EXISTS (SELECT 1 FROM public.links_admins WHERE user_id = auth.uid())
+    public.is_otilink_staff()
+    AND EXISTS (SELECT 1 FROM public.links_admins WHERE user_id = auth.uid())
   );
 
 -- links_templates: ONLY users in links_admins can update (prevents XSS / self-promotion)
+DROP POLICY IF EXISTS templates_update_admin_only ON public.links_templates;
 CREATE POLICY templates_update_admin_only ON public.links_templates
   FOR UPDATE TO authenticated
   USING (
-    EXISTS (SELECT 1 FROM public.links_admins WHERE user_id = auth.uid())
+    public.is_otilink_staff()
+    AND EXISTS (SELECT 1 FROM public.links_admins WHERE user_id = auth.uid())
   )
   WITH CHECK (
-    EXISTS (SELECT 1 FROM public.links_admins WHERE user_id = auth.uid())
+    public.is_otilink_staff()
+    AND EXISTS (SELECT 1 FROM public.links_admins WHERE user_id = auth.uid())
   );
 
 -- links_clicks: users can read click stats for their own links
+DROP POLICY IF EXISTS clicks_select_own ON public.links_clicks;
 CREATE POLICY clicks_select_own ON public.links_clicks
   FOR SELECT USING (
+    public.is_otilink_staff()
+    AND
     EXISTS (
       SELECT 1 FROM public.links_links
       WHERE links_links.id = links_clicks.link_id
@@ -151,8 +196,9 @@ CREATE POLICY clicks_select_own ON public.links_clicks
   );
 
 -- links_clicks_monthly: users can read their own monthly stats
+DROP POLICY IF EXISTS clicks_monthly_select_own ON public.links_clicks_monthly;
 CREATE POLICY clicks_monthly_select_own ON public.links_clicks_monthly
-  FOR SELECT USING (auth.uid() = profile_user_id);
+  FOR SELECT USING (auth.uid() = profile_user_id AND public.is_otilink_staff());
 
 -- links_clicks: no insert via RLS (clicks are recorded server-side with service role)
 
@@ -168,6 +214,7 @@ AS $$
   JOIN links_links l ON l.id = c.link_id
   WHERE c.link_id = ANY(link_ids)
     AND l.profile_user_id = auth.uid()
+    AND public.is_otilink_staff()
     AND c.is_bot = false
   GROUP BY c.link_id;
 $$;
@@ -253,6 +300,7 @@ AS $$
     sum(m.clicks_bot)::bigint AS clicks_bot
   FROM public.links_clicks_monthly m
   WHERE m.profile_user_id = auth.uid()
+    AND public.is_otilink_staff()
     AND m.month >= (date_trunc('month', now())::date - ((months - 1) * interval '1 month'))::date
   GROUP BY 1,2,3
   ORDER BY m.month DESC, m.icon NULLS LAST;

@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { slugFromEmail, isReservedSlug } from '@/lib/utils';
 import type { LinksProfile, Link, LinksTemplate } from '@/lib/types';
+import { getStaffRowByEmail, staffDisplayName } from '@/lib/staff';
 import { ProfilePanel } from './components/ProfilePanel';
 import { LinksManager } from './components/LinksManager';
 import { TemplateEditor } from './components/TemplateEditor';
@@ -13,6 +14,12 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
+
+  // Staff-only access (allowlist via appbadge_utilisateurs)
+  const email = user.email;
+  if (!email) redirect('/login?no_access=1');
+  const staffRow = await getStaffRowByEmail(email);
+  if (!staffRow) redirect('/login?no_access=1');
 
   let profile: LinksProfile | null = null;
   const { data: profileData } = await supabase
@@ -41,8 +48,11 @@ export default async function DashboardPage() {
         .insert({
           user_id: user.id,
           slug: candidateSlug,
-          display_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
-          avatar_url: user.user_metadata?.avatar_url ?? null,
+          display_name: staffDisplayName(
+            staffRow,
+            user.user_metadata?.full_name ?? user.user_metadata?.name ?? null
+          ),
+          avatar_url: staffRow.avatar ?? user.user_metadata?.avatar_url ?? null,
         })
         .select()
         .single();
@@ -63,8 +73,8 @@ export default async function DashboardPage() {
         .insert({
           user_id: user.id,
           slug: fallbackSlug,
-          display_name: user.user_metadata?.full_name ?? null,
-          avatar_url: user.user_metadata?.avatar_url ?? null,
+          display_name: staffDisplayName(staffRow, user.user_metadata?.full_name ?? null),
+          avatar_url: staffRow.avatar ?? user.user_metadata?.avatar_url ?? null,
         })
         .select()
         .single();

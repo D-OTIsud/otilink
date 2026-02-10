@@ -27,4 +27,55 @@ Server-only:
 - `REVALIDATE_SECRET` (protects cache purge endpoint)
 
 ## Supabase setup
-1) Run the SQL migration: [`supabase/migration.sql`](supabase/migration.sql)\n\n2) Grant template admin access (run in Supabase SQL Editor):\n\n```sql\ninsert into public.links_admins (user_id) values ('<user-uuid>');\n```\n\n3) Enable Google OAuth in Supabase Auth and set redirect URL:\n- `https://<your-domain>/auth/callback`\n\n## Cache invalidation (recommended)\nPublic pages are cached and tagged:\n- `slug:{slug}`\n- `template:otisud-default`\n\nConfigure Supabase **Database Webhooks** to call:\n- `POST https://<your-domain>/api/supabase-webhook/revalidate`\n- Header: `x-revalidate-secret: <REVALIDATE_SECRET>`\n\nRecommended tables/events:\n- `public.links_links`: INSERT/UPDATE/DELETE\n- `public.links_profiles`: UPDATE\n- `public.links_templates`: UPDATE\n\n## Click tracking ops\n- Raw clicks: `public.links_clicks`\n- Monthly aggregates: `public.links_clicks_monthly`\n- Rollup function: `public.rollup_clicks_monthly(365, 14)`\n\nIf `pg_cron` is available, schedule the rollup daily (see [`docs/OPERATIONS.md`](docs/OPERATIONS.md)).\n\n## Local development\n```bash\nnpm install\nnpm run dev\n```\n\n## Deployment (Coolify/Docker)\nThis repo includes a production [`Dockerfile`](Dockerfile). Set env vars in Coolify.\n\n## Operations guide\nSee [`docs/OPERATIONS.md`](docs/OPERATIONS.md).\n*** End Patch"}]}                     )}
+1) Run the SQL migration: [`supabase/migration.sql`](supabase/migration.sql)
+
+2) Staff-only access (allowlist)
+
+OTILink is restricted to staff listed in `public.appbadge_utilisateurs` (`email`, `actif`).
+
+3) Grant template admin access (run in Supabase SQL Editor):
+
+```sql
+insert into public.links_admins (user_id) values ('<user-uuid>');
+```
+
+4) Enable Google OAuth in Supabase Auth and set redirect URL:
+- `https://<your-domain>/auth/callback`
+
+## Cache invalidation (recommended)
+
+Public pages are cached and tagged:
+- `slug:{slug}`
+- `template:otisud-default`
+
+Configure Supabase **Database Webhooks** to call:
+- `POST https://<your-domain>/api/supabase-webhook/revalidate`
+- Header: `x-revalidate-secret: <REVALIDATE_SECRET>`
+
+Recommended tables/events:
+- `public.links_links`: INSERT/UPDATE/DELETE
+- `public.links_profiles`: UPDATE
+- `public.links_templates`: UPDATE
+
+## Click tracking ops
+
+- Raw clicks: `public.links_clicks`
+- Monthly aggregates: `public.links_clicks_monthly`
+- Rollup function: `public.rollup_clicks_monthly(365, 14)`
+
+If `pg_cron` is available, schedule the rollup daily (see [`docs/OPERATIONS.md`](docs/OPERATIONS.md)).
+
+## Local development
+
+```bash
+npm install
+npm run dev
+```
+
+## Deployment (Coolify/Docker)
+
+This repo includes a production [`Dockerfile`](Dockerfile). Set env vars in Coolify.
+
+## Operations guide
+
+See [`docs/OPERATIONS.md`](docs/OPERATIONS.md).

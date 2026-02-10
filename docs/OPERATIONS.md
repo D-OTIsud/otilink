@@ -20,6 +20,21 @@ See [`.env.example`](../.env.example).
 
 Run the SQL in [`supabase/migration.sql`](../supabase/migration.sql) in Supabase SQL Editor.
 
+## Staff-only access (allowlist)
+
+OTILink is restricted to **staff only**.
+
+- **Source of truth**: `public.appbadge_utilisateurs`
+- **Required columns**: `email` (text), `actif` (boolean)
+- **Optional columns used for prefill**: `prenom`, `nom`, `avatar`
+
+The migration adds a helper function `public.is_otilink_staff()` (SECURITY DEFINER) and uses it in RLS policies on the `links_*` tables. If a user is not staff, they will be blocked by:
+
+- the app (no `/dashboard` access)
+- the database (RLS denies CRUD on `links_profiles` / `links_links`)
+
+If your staff table name/columns differ, update the function in `supabase/migration.sql` accordingly.
+
 ## Admin access (template editor)
 
 Template read/update is restricted to an allowlist table `public.links_admins`.
