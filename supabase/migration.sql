@@ -283,6 +283,28 @@ DROP POLICY IF EXISTS homepage_editors_select_own ON public.links_homepage_edito
 CREATE POLICY homepage_editors_select_own ON public.links_homepage_editors
   FOR SELECT USING (auth.uid() = user_id AND public.is_otilink_staff());
 
+-- links_homepage_editors: admins can manage editors allowlist
+DROP POLICY IF EXISTS homepage_editors_select_admin ON public.links_homepage_editors;
+CREATE POLICY homepage_editors_select_admin ON public.links_homepage_editors
+  FOR SELECT USING (
+    public.is_otilink_staff()
+    AND EXISTS (SELECT 1 FROM public.links_admins a WHERE a.user_id = auth.uid())
+  );
+
+DROP POLICY IF EXISTS homepage_editors_insert_admin ON public.links_homepage_editors;
+CREATE POLICY homepage_editors_insert_admin ON public.links_homepage_editors
+  FOR INSERT WITH CHECK (
+    public.is_otilink_staff()
+    AND EXISTS (SELECT 1 FROM public.links_admins a WHERE a.user_id = auth.uid())
+  );
+
+DROP POLICY IF EXISTS homepage_editors_delete_admin ON public.links_homepage_editors;
+CREATE POLICY homepage_editors_delete_admin ON public.links_homepage_editors
+  FOR DELETE USING (
+    public.is_otilink_staff()
+    AND EXISTS (SELECT 1 FROM public.links_admins a WHERE a.user_id = auth.uid())
+  );
+
 -- links_pages: owners manage their pages; homepage editors can manage homepage page
 DROP POLICY IF EXISTS pages_select_own_or_homepage_editor ON public.links_pages;
 CREATE POLICY pages_select_own_or_homepage_editor ON public.links_pages
@@ -292,7 +314,10 @@ CREATE POLICY pages_select_own_or_homepage_editor ON public.links_pages
       owner_user_id = auth.uid()
       OR (
         is_homepage = true
-        AND EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+        AND (
+          EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+          OR EXISTS (SELECT 1 FROM public.links_admins a WHERE a.user_id = auth.uid())
+        )
       )
     )
   );
@@ -314,7 +339,10 @@ CREATE POLICY pages_update_own_or_homepage_editor ON public.links_pages
       owner_user_id = auth.uid()
       OR (
         is_homepage = true
-        AND EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+        AND (
+          EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+          OR EXISTS (SELECT 1 FROM public.links_admins a WHERE a.user_id = auth.uid())
+        )
       )
     )
   )
@@ -324,7 +352,10 @@ CREATE POLICY pages_update_own_or_homepage_editor ON public.links_pages
       owner_user_id = auth.uid()
       OR (
         is_homepage = true
-        AND EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+        AND (
+          EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+          OR EXISTS (SELECT 1 FROM public.links_admins a WHERE a.user_id = auth.uid())
+        )
       )
     )
   );
@@ -350,7 +381,10 @@ CREATE POLICY links_select_own ON public.links_links
           p.owner_user_id = auth.uid()
           OR (
             p.is_homepage = true
-            AND EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+            AND (
+              EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+              OR EXISTS (SELECT 1 FROM public.links_admins a WHERE a.user_id = auth.uid())
+            )
           )
         )
     )
@@ -369,7 +403,10 @@ CREATE POLICY links_insert_own ON public.links_links
           p.owner_user_id = auth.uid()
           OR (
             p.is_homepage = true
-            AND EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+            AND (
+              EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+              OR EXISTS (SELECT 1 FROM public.links_admins a WHERE a.user_id = auth.uid())
+            )
           )
         )
     )
@@ -388,7 +425,10 @@ CREATE POLICY links_update_own ON public.links_links
           p.owner_user_id = auth.uid()
           OR (
             p.is_homepage = true
-            AND EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+            AND (
+              EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+              OR EXISTS (SELECT 1 FROM public.links_admins a WHERE a.user_id = auth.uid())
+            )
           )
         )
     )
@@ -403,7 +443,10 @@ CREATE POLICY links_update_own ON public.links_links
           p.owner_user_id = auth.uid()
           OR (
             p.is_homepage = true
-            AND EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+            AND (
+              EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+              OR EXISTS (SELECT 1 FROM public.links_admins a WHERE a.user_id = auth.uid())
+            )
           )
         )
     )
@@ -421,7 +464,10 @@ CREATE POLICY links_delete_own ON public.links_links
           p.owner_user_id = auth.uid()
           OR (
             p.is_homepage = true
-            AND EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+            AND (
+              EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+              OR EXISTS (SELECT 1 FROM public.links_admins a WHERE a.user_id = auth.uid())
+            )
           )
         )
     )
@@ -484,7 +530,10 @@ CREATE POLICY clicks_monthly_select_own ON public.links_clicks_monthly
           p.owner_user_id = auth.uid()
           OR (
             p.is_homepage = true
-            AND EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+            AND (
+              EXISTS (SELECT 1 FROM public.links_homepage_editors e WHERE e.user_id = auth.uid())
+              OR EXISTS (SELECT 1 FROM public.links_admins a WHERE a.user_id = auth.uid())
+            )
           )
         )
     )

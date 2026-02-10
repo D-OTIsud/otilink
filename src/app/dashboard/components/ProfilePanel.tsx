@@ -84,7 +84,7 @@ export function ProfilePanel({
     .join('');
 
   return (
-    <section className="rounded-2xl border border-otilink-sage/35 bg-white/80 p-6 shadow-sm backdrop-blur">
+    <section className="rounded-2xl border border-otilink-sage/35 bg-white p-6 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-zinc-900">

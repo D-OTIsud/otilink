@@ -47,12 +47,8 @@ body {
 }
 
 @layer utilities {
-  /* Subtle organic brand backdrop for backend screens */
+  /* Backend background: keep it flat/clean (no gradients). */
   .otilink-backend-bg {
-    background:
-      radial-gradient(900px 520px at 15% 8%, color-mix(in oklab, var(--otilink-curry) 38%, transparent), transparent 58%),
-      radial-gradient(900px 520px at 85% 12%, color-mix(in oklab, var(--otilink-sage) 40%, transparent), transparent 58%),
-      radial-gradient(1200px 700px at 50% 115%, color-mix(in oklab, var(--otilink-teal) 22%, transparent), transparent 60%),
-      var(--otilink-offwhite);
+    background: var(--otilink-offwhite);
   }
 }

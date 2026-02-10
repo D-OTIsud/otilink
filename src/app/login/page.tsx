@@ -19,7 +19,7 @@ export default async function LoginPage({
       // Logged in but no email claim (should be rare). Force logout path.
       return (
         <div className="flex min-h-screen flex-col items-center justify-center otilink-backend-bg px-4">
-          <div className="w-full max-w-sm rounded-3xl border border-otilink-sage/35 bg-white/80 p-8 shadow-sm backdrop-blur">
+          <div className="w-full max-w-sm rounded-3xl border border-otilink-sage/35 bg-white p-8 shadow-sm">
             <div className="mb-4 flex items-center justify-center">
               <BrandMark className="h-14 w-14" />
             </div>
@@ -44,7 +44,7 @@ export default async function LoginPage({
 
     return (
       <div className="flex min-h-screen flex-col items-center justify-center otilink-backend-bg px-4">
-        <div className="w-full max-w-sm rounded-3xl border border-otilink-sage/35 bg-white/80 p-8 shadow-sm backdrop-blur">
+        <div className="w-full max-w-sm rounded-3xl border border-otilink-sage/35 bg-white p-8 shadow-sm">
           <div className="mb-4 flex items-center justify-center">
             <BrandMark className="h-14 w-14" />
           </div>
@@ -64,7 +64,7 @@ export default async function LoginPage({
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center otilink-backend-bg px-4">
-      <div className="w-full max-w-sm rounded-3xl border border-otilink-sage/35 bg-white/80 p-8 shadow-sm backdrop-blur">
+      <div className="w-full max-w-sm rounded-3xl border border-otilink-sage/35 bg-white p-8 shadow-sm">
         <div className="mb-4 flex items-center justify-center">
           <BrandMark className="h-14 w-14" />
         </div>

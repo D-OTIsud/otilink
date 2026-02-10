@@ -56,6 +56,9 @@ where lower(email) = lower('<editor-email>')
 on conflict (user_id) do nothing;
 ```
 
+In the app, admins can manage homepage editors at:
+- `/dashboard/admin/editors`
+
 ## Admin access (template editor)
 
 Template read/update is restricted to an allowlist table `public.links_admins`.

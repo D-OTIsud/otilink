@@ -25,7 +25,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
         </svg>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-8">
-        <article className="prose prose-zinc max-w-none rounded-2xl border border-otilink-sage/35 bg-white/80 p-6 shadow-sm backdrop-blur">
+        <article className="prose prose-zinc max-w-none rounded-2xl border border-otilink-sage/35 bg-white p-6 shadow-sm">
           {children}
         </article>
       </main>

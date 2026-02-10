@@ -58,7 +58,7 @@ export function PagesPicker({
   }
 
   return (
-    <section className="rounded-2xl border border-otilink-sage/35 bg-white/80 p-4 shadow-sm backdrop-blur">
+    <section className="rounded-2xl border border-otilink-sage/35 bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-sm font-semibold text-zinc-900">Pages</h2>

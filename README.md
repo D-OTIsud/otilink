@@ -43,6 +43,8 @@ where lower(email) = lower('<editor-email>')
 on conflict (user_id) do nothing;
 ```
 
+Admins can manage homepage editor rights in the app at `/dashboard/admin/editors`.
+
 4) Grant template admin access (run in Supabase SQL Editor):
 
 ```sql

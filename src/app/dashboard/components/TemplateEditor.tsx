@@ -43,9 +43,11 @@ export function TemplateEditor({ template }: { template: LinksTemplate }) {
   }
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-      <h2 className="mb-2 text-lg font-semibold text-zinc-900">Modèle HTML <span className="text-xs font-normal text-zinc-400">(admin)</span></h2>
-      <p className="mb-4 text-sm text-zinc-600">
+    <section className="rounded-2xl border border-otilink-sage/35 bg-white p-6 shadow-sm">
+      <h2 className="mb-2 text-lg font-extrabold text-otilink-charcoal">
+        Modèle HTML <span className="text-xs font-semibold text-otilink-graphite">(admin)</span>
+      </h2>
+      <p className="mb-4 text-sm text-otilink-graphite">
         Placeholders disponibles : {PLACEHOLDERS.join(', ')}
       </p>
       <textarea
@@ -53,14 +55,14 @@ export function TemplateEditor({ template }: { template: LinksTemplate }) {
         onChange={(e) => setHtml(e.target.value)}
         rows={18}
         maxLength={FIELD_LIMITS.html}
-        className="mb-2 w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm text-zinc-900 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+        className="mb-2 w-full rounded-xl border border-otilink-sage/45 bg-white px-3 py-2 font-mono text-sm text-otilink-charcoal focus:border-otilink-teal focus:outline-none focus:ring-2 focus:ring-otilink-teal/20"
         spellCheck={false}
       />
-      <p className="mb-4 text-xs text-zinc-400">{html.length}/{FIELD_LIMITS.html}</p>
+      <p className="mb-4 text-xs text-otilink-graphite/70">{html.length}/{FIELD_LIMITS.html}</p>
       {message && (
         <p
           className={
-            message.type === 'ok' ? 'mb-2 text-sm text-green-600' : 'mb-2 text-sm text-red-600'
+            message.type === 'ok' ? 'mb-2 text-sm text-otilink-teal' : 'mb-2 text-sm text-otilink-volcan'
           }
         >
           {message.text}
@@ -70,7 +72,7 @@ export function TemplateEditor({ template }: { template: LinksTemplate }) {
         type="button"
         onClick={handleSave}
         disabled={saving}
-        className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
+        className="rounded-xl bg-otilink-teal px-4 py-2 text-sm font-extrabold text-white hover:bg-otilink-teal-700 disabled:opacity-50"
       >
         {saving ? 'Enregistrement…' : 'Enregistrer le modèle'}
       </button>
