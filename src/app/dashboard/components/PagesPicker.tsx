@@ -58,7 +58,7 @@ export function PagesPicker({
   }
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <section className="rounded-2xl border border-otilink-sage/35 bg-white/80 p-4 shadow-sm backdrop-blur">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-sm font-semibold text-zinc-900">Pages</h2>
@@ -69,7 +69,7 @@ export function PagesPicker({
         <div className="flex items-center gap-2">
           <a
             href={current?.id ? `/dashboard?page=${encodeURIComponent(current.id)}` : '/dashboard'}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="rounded-xl border border-otilink-sage/40 bg-white px-3 py-2 text-sm font-extrabold text-otilink-graphite hover:bg-otilink-offwhite"
           >
             Rafraîchir
           </a>
@@ -77,7 +77,7 @@ export function PagesPicker({
             type="button"
             onClick={createNewPage}
             disabled={creating}
-            className="rounded-lg bg-teal-600 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
+            className="rounded-xl bg-otilink-teal px-3 py-2 text-sm font-extrabold text-white hover:bg-otilink-teal-700 disabled:opacity-50"
           >
             {creating ? 'Création…' : 'Nouvelle page'}
           </button>
@@ -96,8 +96,8 @@ export function PagesPicker({
               href={`/dashboard?page=${encodeURIComponent(p.id)}`}
               className={
                 active
-                  ? 'rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white'
-                  : 'rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-zinc-50'
+                  ? 'rounded-full bg-otilink-teal px-3 py-1.5 text-xs font-extrabold text-white'
+                  : 'rounded-full border border-otilink-sage/40 bg-white px-3 py-1.5 text-xs font-extrabold text-otilink-graphite hover:bg-otilink-offwhite'
               }
             >
               {label}

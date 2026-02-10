@@ -95,13 +95,13 @@ export function LinksManager({
   );
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-otilink-sage/35 bg-white/80 p-6 shadow-sm backdrop-blur">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-zinc-900">Liens</h2>
+        <h2 className="text-lg font-extrabold text-otilink-charcoal">Liens</h2>
         <button
           type="button"
           onClick={addLink}
-          className="rounded-lg bg-teal-600 px-3 py-2 text-sm font-medium text-white hover:bg-teal-700"
+          className="rounded-xl bg-otilink-teal px-3 py-2 text-sm font-extrabold text-white hover:bg-otilink-teal-700"
         >
           Ajouter un lien
         </button>

@@ -84,7 +84,7 @@ export function ProfilePanel({
     .join('');
 
   return (
-    <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+    <section className="rounded-2xl border border-otilink-sage/35 bg-white/80 p-6 shadow-sm backdrop-blur">
       <div className="mb-4 flex items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-zinc-900">
@@ -120,7 +120,7 @@ export function ProfilePanel({
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             maxLength={FIELD_LIMITS.display_name}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="w-full rounded-xl border border-otilink-sage/45 bg-white px-3 py-2 text-otilink-charcoal focus:border-otilink-teal focus:outline-none focus:ring-2 focus:ring-otilink-teal/20"
           />
         </div>
         <div>
@@ -133,7 +133,7 @@ export function ProfilePanel({
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             maxLength={FIELD_LIMITS.bio}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="w-full rounded-xl border border-otilink-sage/45 bg-white px-3 py-2 text-otilink-charcoal focus:border-otilink-teal focus:outline-none focus:ring-2 focus:ring-otilink-teal/20"
           />
           <p className="mt-1 text-xs text-zinc-400">{bio.length}/{FIELD_LIMITS.bio}</p>
         </div>
@@ -148,7 +148,7 @@ export function ProfilePanel({
             onChange={(e) => setSlug(slugFromString(e.target.value) || e.target.value)}
             maxLength={FIELD_LIMITS.slug_max}
             disabled={page.is_homepage}
-            className="w-full rounded-lg border border-zinc-300 px-3 py-2 font-mono text-sm text-zinc-900 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="w-full rounded-xl border border-otilink-sage/45 bg-white px-3 py-2 font-mono text-sm text-otilink-charcoal focus:border-otilink-teal focus:outline-none focus:ring-2 focus:ring-otilink-teal/20 disabled:opacity-60"
           />
           <p className="mt-1 text-xs text-zinc-500">
             {page.is_homepage ? 'Cette page est accessible sur /' : `Votre page sera à : /${slug || '…'}`}
@@ -165,7 +165,7 @@ export function ProfilePanel({
             id="template_slug"
             value={templateSlug}
             onChange={(e) => setTemplateSlug(e.target.value)}
-            className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-900 focus:border-teal-500 focus:outline-none focus:ring-1 focus:ring-teal-500"
+            className="w-full rounded-xl border border-otilink-sage/45 bg-white px-3 py-2 text-otilink-charcoal focus:border-otilink-teal focus:outline-none focus:ring-2 focus:ring-otilink-teal/20"
           >
             {templates.map((t) => (
               <option key={t.slug} value={t.slug}>
@@ -205,7 +205,7 @@ export function ProfilePanel({
         <button
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
+          className="rounded-xl bg-otilink-teal px-4 py-2 text-sm font-extrabold text-white hover:bg-otilink-teal-700 disabled:opacity-50"
         >
           {saving ? 'Enregistrement…' : 'Enregistrer la page'}
         </button>

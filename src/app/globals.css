@@ -1,26 +1,58 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* OTISUD brand palette */
+  --otilink-teal: #0f6a7d; /* Deep Teal / Océan */
+  --otilink-teal-700: #0b5564;
+  --otilink-sage: #8fb8a2; /* Light Sage Green */
+  --otilink-volcan: #b25241; /* Volcan Red */
+  --otilink-curry: #d6b24a; /* Curry Yellow */
+  --otilink-offwhite: #fdfdfc; /* Off-white */
+  --otilink-graphite: #3a3a3a; /* Graphite Grey */
+  --otilink-charcoal: #1a1e1b; /* Soft Charcoal */
+
+  --background: var(--otilink-offwhite);
+  --foreground: var(--otilink-charcoal);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  /* Brand tokens as Tailwind colors (Tailwind v4) */
+  --color-otilink-teal: var(--otilink-teal);
+  --color-otilink-teal-700: var(--otilink-teal-700);
+  --color-otilink-sage: var(--otilink-sage);
+  --color-otilink-volcan: var(--otilink-volcan);
+  --color-otilink-curry: var(--otilink-curry);
+  --color-otilink-offwhite: var(--otilink-offwhite);
+  --color-otilink-graphite: var(--otilink-graphite);
+  --color-otilink-charcoal: var(--otilink-charcoal);
+
+  --font-sans: var(--font-nunito);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0b1110;
+    --foreground: #f4f6f5;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial,
+    "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+@layer utilities {
+  /* Subtle organic brand backdrop for backend screens */
+  .otilink-backend-bg {
+    background:
+      radial-gradient(900px 520px at 15% 8%, color-mix(in oklab, var(--otilink-curry) 38%, transparent), transparent 58%),
+      radial-gradient(900px 520px at 85% 12%, color-mix(in oklab, var(--otilink-sage) 40%, transparent), transparent 58%),
+      radial-gradient(1200px 700px at 50% 115%, color-mix(in oklab, var(--otilink-teal) 22%, transparent), transparent 60%),
+      var(--otilink-offwhite);
+  }
 }

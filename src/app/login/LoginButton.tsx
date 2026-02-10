@@ -17,7 +17,7 @@ export function LoginButton() {
     <button
       type="button"
       onClick={handleLogin}
-      className="flex w-full items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 py-3 text-sm font-medium text-white transition hover:bg-zinc-800"
+      className="flex w-full items-center justify-center gap-2 rounded-xl bg-otilink-teal px-4 py-3 text-sm font-extrabold text-white transition hover:bg-otilink-teal-700"
     >
       <svg className="h-5 w-5" viewBox="0 0 24 24" aria-hidden>
         <path

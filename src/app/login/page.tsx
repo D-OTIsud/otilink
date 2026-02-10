@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { getStaffRowByEmail } from '@/lib/staff';
+import { BrandMark } from '@/components/BrandMark';
 import { LoginButton } from './LoginButton';
 
 export default async function LoginPage({
@@ -17,14 +18,19 @@ export default async function LoginPage({
     if (!email) {
       // Logged in but no email claim (should be rare). Force logout path.
       return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-100 px-4">
-          <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm">
-            <h1 className="mb-2 text-center text-xl font-semibold text-zinc-900">OTISUD Links</h1>
+        <div className="flex min-h-screen flex-col items-center justify-center otilink-backend-bg px-4">
+          <div className="w-full max-w-sm rounded-3xl border border-otilink-sage/35 bg-white/80 p-8 shadow-sm backdrop-blur">
+            <div className="mb-4 flex items-center justify-center">
+              <BrandMark className="h-14 w-14" />
+            </div>
+            <h1 className="mb-2 text-center text-2xl font-extrabold text-otilink-charcoal">
+              OTISUD Links
+            </h1>
             <p className="mb-6 text-center text-sm text-zinc-600">
               Accès impossible (email manquant). Déconnectez-vous puis réessayez.
             </p>
             <form action="/logout" method="post">
-              <button className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800">
+              <button className="w-full rounded-xl bg-otilink-teal px-4 py-2 text-sm font-extrabold text-white hover:bg-otilink-teal-700">
                 Se déconnecter
               </button>
             </form>
@@ -37,14 +43,17 @@ export default async function LoginPage({
     if (staffRow) redirect('/dashboard');
 
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-100 px-4">
-        <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm">
-          <h1 className="mb-2 text-center text-xl font-semibold text-zinc-900">OTISUD Links</h1>
+      <div className="flex min-h-screen flex-col items-center justify-center otilink-backend-bg px-4">
+        <div className="w-full max-w-sm rounded-3xl border border-otilink-sage/35 bg-white/80 p-8 shadow-sm backdrop-blur">
+          <div className="mb-4 flex items-center justify-center">
+            <BrandMark className="h-14 w-14" />
+          </div>
+          <h1 className="mb-2 text-center text-2xl font-extrabold text-otilink-charcoal">OTISUD Links</h1>
           <p className="mb-6 text-center text-sm text-zinc-600">
             Accès réservé au personnel OTISUD. Votre compte n’est pas autorisé.
           </p>
           <form action="/logout" method="post">
-            <button className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800">
+            <button className="w-full rounded-xl bg-otilink-teal px-4 py-2 text-sm font-extrabold text-white hover:bg-otilink-teal-700">
               Se déconnecter
             </button>
           </form>
@@ -54,16 +63,17 @@ export default async function LoginPage({
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-100 px-4">
-      <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm">
-        <h1 className="mb-2 text-center text-xl font-semibold text-zinc-900">
-          OTISUD Links
-        </h1>
+    <div className="flex min-h-screen flex-col items-center justify-center otilink-backend-bg px-4">
+      <div className="w-full max-w-sm rounded-3xl border border-otilink-sage/35 bg-white/80 p-8 shadow-sm backdrop-blur">
+        <div className="mb-4 flex items-center justify-center">
+          <BrandMark className="h-14 w-14" />
+        </div>
+        <h1 className="mb-2 text-center text-2xl font-extrabold text-otilink-charcoal">OTISUD Links</h1>
         <p className="mb-6 text-center text-sm text-zinc-600">
           Connectez-vous pour gérer votre page de liens.
         </p>
         {searchParams?.no_access ? (
-          <p className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-center text-xs text-amber-800">
+          <p className="mb-4 rounded-xl border border-otilink-curry/40 bg-white px-3 py-2 text-center text-xs font-semibold text-otilink-graphite">
             Accès réservé au personnel OTISUD. Si vous pensez qu’il s’agit d’une erreur, contactez
             l’administrateur.
           </p>

@@ -113,7 +113,11 @@ export default async function DashboardPage({
   }
 
   if (pages.length === 0) {
-    return <div className="p-8 text-red-600">Impossible de créer ou charger vos pages.</div>;
+    return (
+      <div className="p-8 text-otilink-volcan">
+        Impossible de créer ou charger vos pages.
+      </div>
+    );
   }
 
   const selectedId = typeof sp.page === 'string' ? sp.page : undefined;
