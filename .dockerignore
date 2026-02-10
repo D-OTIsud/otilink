@@ -1,0 +1,32 @@
+# Dependencies
+node_modules
+npm-debug.log*
+.pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build
+.next
+out
+dist
+build
+
+# Git
+.git
+.gitignore
+
+# IDE / Editor
+.idea
+.vscode
+*.swp
+*.swo
+
+# Env (set at runtime in Coolify)
+.env
+.env.*
+!.env.example
+
+# Docs / misc
+README.md
+*.md
+.DS_Store
